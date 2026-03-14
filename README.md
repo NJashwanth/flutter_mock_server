@@ -107,6 +107,21 @@ dart run flutter_mock_server validate
 dart run flutter_mock_server start
 ```
 
+## Example
+
+Run the end-to-end example:
+
+```bash
+dart run example/flutter_mock_server_example.dart
+```
+
+The example:
+
+- creates a temporary project with `mock.yaml` and `data/orders.json`
+- starts `FlutterMockServer` on a free local port
+- sends `GET /orders` and `POST /orders` requests
+- updates `mock.yaml` during runtime to demonstrate hot reload
+
 ## Package layout
 
 ```text
