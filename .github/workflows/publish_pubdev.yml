@@ -5,6 +5,12 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Actually publish to pub.dev
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -17,6 +23,22 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Decide publish mode
+        id: mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          should_publish="false"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.publish }}" == "true" ]]; then
+            should_publish="true"
+          fi
+          echo "should_publish=$should_publish" >> "$GITHUB_OUTPUT"
+          if [[ "$should_publish" == "true" ]]; then
+            echo "Manual publish mode enabled."
+          else
+            echo "Validation-only mode (no pub.dev publish)."
+          fi
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -40,6 +62,7 @@ jobs:
           fi
 
       - name: Read package metadata
+        if: ${{ steps.mode.outputs.should_publish == 'true' }}
         id: package
         shell: bash
         run: |
@@ -54,6 +77,7 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Check whether version already exists on pub.dev
+        if: ${{ steps.mode.outputs.should_publish == 'true' }}
         id: version_check
         shell: bash
         run: |
@@ -69,7 +93,7 @@ jobs:
           fi
 
       - name: Restore pub.dev credentials
-        if: ${{ steps.version_check.outputs.already_published == 'false' }}
+        if: ${{ steps.mode.outputs.should_publish == 'true' && steps.version_check.outputs.already_published == 'false' }}
         env:
           PUB_CREDENTIALS_B64: ${{ secrets.PUB_CREDENTIALS_B64 }}
         run: |
@@ -78,5 +102,5 @@ jobs:
           echo "$PUB_CREDENTIALS_B64" | base64 --decode > "$HOME/.config/dart/pub-credentials.json"
 
       - name: Publish package
-        if: ${{ steps.version_check.outputs.already_published == 'false' }}
+        if: ${{ steps.mode.outputs.should_publish == 'true' && steps.version_check.outputs.already_published == 'false' }}
         run: dart pub publish --force
