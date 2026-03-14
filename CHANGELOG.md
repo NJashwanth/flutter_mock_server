@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.6
+
+- Updated CI/CD workflow for pub.dev publishing from `main`, including existing-version checks and credential restore from GitHub secret.
+
 ## 0.1.5
 
 - Hardened publish workflow validation so push and manual dispatch events resolve refs safely without invalid workflow runs.
