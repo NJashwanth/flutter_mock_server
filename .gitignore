@@ -1,0 +1,12 @@
+.dart_tool/
+.packages
+build/
+pubspec_overrides.yaml
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# macOS
+.DS_Store

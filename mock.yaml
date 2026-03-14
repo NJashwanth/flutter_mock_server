@@ -1,0 +1,13 @@
+routes:
+  - path: /users
+    method: GET
+    response:
+      file: data/users.json
+
+  - path: /users
+    method: POST
+    response:
+      status: 201
+      body:
+        message: User created
+        id: "{{uuid}}"

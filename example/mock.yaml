@@ -1,0 +1,13 @@
+routes:
+  - path: /health
+    method: GET
+    response:
+      body:
+        status: ok
+        generatedAt: "{{timestamp}}"
+
+  - path: /users
+    method: GET
+    response:
+      delay_ms: 150
+      file: data/users.json
