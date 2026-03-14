@@ -2,14 +2,9 @@ name: Publish to pub.dev
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
+    branches:
+      - main
   workflow_dispatch:
-    inputs:
-      ref:
-        description: Tag to publish (for example: v0.1.2).
-        required: false
-        default: ''
 
 permissions:
   contents: read
@@ -20,62 +15,68 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Resolve publish tag
-        id: resolve-tag
-        run: |
-          set -euo pipefail
-
-          tag="${{ github.ref_name }}"
-
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            manual_tag="${{ github.event.inputs.ref }}"
-            if [[ -n "$manual_tag" ]]; then
-              tag="$manual_tag"
-            fi
-          fi
-
-          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-].*)?$ ]]; then
-            echo "Publishing is only allowed from version tags like v0.1.2. Received: $tag"
-            exit 1
-          fi
-
-          if [[ "$tag" == "${{ github.ref_name }}" && "${{ github.ref_type }}" != "tag" ]]; then
-            echo "This run is on a branch ref (${{ github.ref_name }}). Publishing requires a tag ref."
-            exit 1
-          fi
-
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-
-      - name: Check out code
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ steps.resolve-tag.outputs.tag }}
 
-      - name: Set up Dart
-        uses: dart-lang/setup-dart@v1
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
 
       - name: Install dependencies
-        run: dart pub get
+        run: flutter pub get
 
-      - name: Verify tag matches pubspec version
-        env:
-          RELEASE_TAG: ${{ steps.resolve-tag.outputs.tag }}
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        shell: bash
         run: |
           set -euo pipefail
-
-          version=$(awk '/^version:/ { print $2; exit }' pubspec.yaml)
-          expected_tag="v$version"
-
-          if [[ "$RELEASE_TAG" != "$expected_tag" ]]; then
-            echo "Tag $RELEASE_TAG does not match pubspec version $version."
-            exit 1
+          if [[ -d test ]]; then
+            flutter test
+          else
+            echo "No test directory found. Skipping tests."
           fi
 
-      - name: Analyze package
-        run: dart analyze
+      - name: Read package metadata
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+          name=$(awk '/^name:/ { print $2; exit }' pubspec.yaml)
+          version=$(awk '/^version:/ { print $2; exit }' pubspec.yaml)
+          if [[ -z "$name" || -z "$version" ]]; then
+            echo "Could not read name/version from pubspec.yaml"
+            exit 1
+          fi
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      - name: Validate package for publishing
-        run: dart pub publish --dry-run
+      - name: Check whether version already exists on pub.dev
+        id: version_check
+        shell: bash
+        run: |
+          set -euo pipefail
+          name='${{ steps.package.outputs.name }}'
+          version='${{ steps.package.outputs.version }}'
+          if curl -fsS "https://pub.dev/api/packages/$name/versions/$version" >/dev/null; then
+            echo "already_published=true" >> "$GITHUB_OUTPUT"
+            echo "Version $version is already published for $name. Skipping publish."
+          else
+            echo "already_published=false" >> "$GITHUB_OUTPUT"
+            echo "Version $version is not on pub.dev yet. Proceeding."
+          fi
+
+      - name: Restore pub.dev credentials
+        if: ${{ steps.version_check.outputs.already_published == 'false' }}
+        env:
+          PUB_CREDENTIALS_B64: ${{ secrets.PUB_CREDENTIALS_B64 }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.config/dart"
+          echo "$PUB_CREDENTIALS_B64" | base64 --decode > "$HOME/.config/dart/pub-credentials.json"
 
       - name: Publish package
+        if: ${{ steps.version_check.outputs.already_published == 'false' }}
         run: dart pub publish --force
