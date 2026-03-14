@@ -1,13 +1,53 @@
-routes:
-  - path: /health
-    method: GET
-    response:
-      body:
-        status: ok
-        generatedAt: "{{timestamp}}"
+seed: 7
 
+models:
+  User:
+    id: uuid
+    name: name
+    email: email
+    role:
+      enum: [admin, member, viewer]
+    age:
+      type: int
+      min: 18
+      max: 60
+
+stores:
+  users:
+    model: User
+    count: 10
+
+routes:
   - path: /users
     method: GET
+    action: list
+    store: users
+
+  - path: /users/:id
+    method: GET
+    action: get
+    store: users
+
+  - path: /users
+    method: POST
+    action: create
+    store: users
+
+  - path: /users/:id
+    method: PUT
+    action: update
+    store: users
+
+  - path: /users/:id
+    method: DELETE
+    action: delete
+    store: users
+
+  - path: /session
+    method: POST
     response:
-      delay_ms: 150
-      file: data/users.json
+      status: 201
+      body:
+        token: "{{uuid}}"
+        email: "{{request.body.email}}"
+        message: Signed in
