@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.3
+
+- Fixed CI/CD release flow to publish from tag refs, matching pub.dev trusted publishing requirements.
+- Kept manual `workflow_dispatch` publishing available, now constrained to version tags.
+
 ## 0.1.2
 
 - Improved the runnable example to demonstrate a full end-to-end flow.
