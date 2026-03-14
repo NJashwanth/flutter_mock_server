@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   tag:
@@ -18,7 +19,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Create version tag from pubspec
+      - name: Create or verify version tag from pubspec
         run: |
           set -euo pipefail
 
@@ -34,17 +35,31 @@ jobs:
           if git rev-parse "$tag" >/dev/null 2>&1; then
             existing_commit=$(git rev-list -n 1 "$tag")
             if [[ "$existing_commit" == "$GITHUB_SHA" ]]; then
-              echo "Tag $tag already points to this commit. Nothing to do."
-              exit 0
+              echo "Tag $tag already points to this commit. Continuing to publish checks."
+            else
+              echo "Tag $tag already exists on commit $existing_commit. Version reuse is not allowed."
+              exit 1
             fi
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag "$tag" "$GITHUB_SHA"
+            git push origin "$tag"
 
-            echo "Tag $tag already exists on commit $existing_commit. Version reuse is not allowed."
-            exit 1
+            echo "Created tag $tag for $GITHUB_SHA"
           fi
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag "$tag" "$GITHUB_SHA"
-          git push origin "$tag"
+      - name: Set up Dart
+        uses: dart-lang/setup-dart@v1
 
-          echo "Created tag $tag for $GITHUB_SHA"
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Analyze package
+        run: dart analyze
+
+      - name: Validate package for publishing
+        run: dart pub publish --dry-run
+
+      - name: Publish package
+        run: dart pub publish --force

@@ -2,7 +2,9 @@ import 'dart:math';
 
 import 'package:uuid/uuid.dart';
 
+/// Expands template placeholders in inline and file-based mock responses.
 class TemplateEngine {
+  /// Creates a template engine with an optional random source.
   TemplateEngine({Random? random}) : _random = random ?? Random();
 
   static final RegExp _templatePattern = RegExp(r'{{\s*([a-zA-Z0-9_]+)\s*}}');
@@ -20,6 +22,7 @@ class TemplateEngine {
   final Random _random;
   final Uuid _uuid = const Uuid();
 
+  /// Recursively renders placeholders within strings, maps, and lists.
   Object? render(Object? value) {
     if (value is Map<String, Object?>) {
       return value
