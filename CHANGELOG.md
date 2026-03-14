@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2
+
+- Improved the runnable example to demonstrate a full end-to-end flow.
+- Example now starts the mock server, performs real HTTP requests, and shows hot reload by updating `mock.yaml` while running.
+
 ## 0.1.1
 
 - Initial public release of `flutter_mock_server`.

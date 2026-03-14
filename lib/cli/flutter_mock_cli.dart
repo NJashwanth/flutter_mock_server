@@ -183,7 +183,7 @@ Future<int> _runValidate(ArgResults args) async {
 }
 
 void _printUsage(ArgParser parser) {
-  stdout.writeln('flutter_mock_server 0.1.1');
+  stdout.writeln('flutter_mock_server 0.1.2');
   stdout.writeln('Usage: flutter_mock <command> [arguments]');
   stdout.writeln('');
   stdout.writeln('Commands:');
