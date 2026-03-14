@@ -7,19 +7,8 @@ Future<void> main() async {
   final tempDir =
       await Directory.systemTemp.createTemp('flutter_mock_example_');
   final configFile = File('${tempDir.path}/mock.yaml');
-  final dataDir = Directory('${tempDir.path}/data');
-  final ordersJson = File('${dataDir.path}/orders.json');
-  await dataDir.create(recursive: true);
 
-  await ordersJson.writeAsString('''[
-  {
-    "id": "ord_1001",
-    "customer": "Avery",
-    "total": 149.99
-  }
-]''');
-
-  await configFile.writeAsString(_initialConfig());
+  await configFile.writeAsString(_config());
 
   final port = await _findFreePort();
   final server = FlutterMockServer(
@@ -32,32 +21,66 @@ Future<void> main() async {
     await server.start();
     final client = HttpClient();
 
-    final getOrders = await _request(
+    final listUsers = await _request(
       client,
       method: 'GET',
-      uri: Uri.parse('http://127.0.0.1:$port/orders'),
+      uri: Uri.parse('http://127.0.0.1:$port/users?role=admin&limit=2'),
     );
-    stdout.writeln('GET /orders -> ${getOrders.statusCode} ${getOrders.body}');
+    stdout.writeln('GET /users?role=admin&limit=2 -> '
+        '${listUsers.statusCode} ${listUsers.body}');
 
-    final createOrder = await _request(
+    final createUser = await _request(
       client,
       method: 'POST',
-      uri: Uri.parse('http://127.0.0.1:$port/orders'),
+      uri: Uri.parse('http://127.0.0.1:$port/users'),
+      body: {
+        'name': 'Morgan',
+        'email': 'morgan@sample.app',
+        'role': 'member',
+        'age': 29,
+      },
     );
-    stdout.writeln(
-        'POST /orders -> ${createOrder.statusCode} ${createOrder.body}');
+    stdout
+        .writeln('POST /users -> ${createUser.statusCode} ${createUser.body}');
 
-    await configFile.writeAsString(_updatedConfig());
-    await Future<void>.delayed(const Duration(milliseconds: 600));
+    final createdId =
+        (jsonDecode(createUser.body) as Map<String, dynamic>)['id'];
+    final getUser = await _request(
+      client,
+      method: 'GET',
+      uri: Uri.parse('http://127.0.0.1:$port/users/$createdId'),
+    );
+    stdout.writeln('GET /users/$createdId -> '
+        '${getUser.statusCode} ${getUser.body}');
 
-    final createAfterReload = await _request(
+    final updateUser = await _request(
+      client,
+      method: 'PUT',
+      uri: Uri.parse('http://127.0.0.1:$port/users/$createdId'),
+      body: {
+        'role': 'admin',
+      },
+    );
+    stdout.writeln('PUT /users/$createdId -> '
+        '${updateUser.statusCode} ${updateUser.body}');
+
+    final signIn = await _request(
       client,
       method: 'POST',
-      uri: Uri.parse('http://127.0.0.1:$port/orders'),
+      uri: Uri.parse('http://127.0.0.1:$port/session'),
+      body: {
+        'email': 'morgan@sample.app',
+      },
     );
-    stdout.writeln(
-      'POST /orders (after hot reload) -> ${createAfterReload.statusCode} ${createAfterReload.body}',
+    stdout.writeln('POST /session -> ${signIn.statusCode} ${signIn.body}');
+
+    final deleteUser = await _request(
+      client,
+      method: 'DELETE',
+      uri: Uri.parse('http://127.0.0.1:$port/users/$createdId'),
     );
+    stdout.writeln('DELETE /users/$createdId -> '
+        '${deleteUser.statusCode} ${deleteUser.body}');
 
     client.close(force: true);
   } finally {
@@ -77,47 +100,72 @@ Future<_ResponseData> _request(
   HttpClient client, {
   required String method,
   required Uri uri,
+  Object? body,
 }) async {
   final request = await client.openUrl(method, uri);
+  if (body != null) {
+    request.headers.contentType = ContentType.json;
+    request.write(jsonEncode(body));
+  }
   final response = await request.close();
-  final body = await utf8.decoder.bind(response).join();
-  return _ResponseData(response.statusCode, body);
+  final responseBody = await utf8.decoder.bind(response).join();
+  return _ResponseData(response.statusCode, responseBody);
 }
 
-String _initialConfig() {
-  return '''routes:
-  - path: /orders
-    method: GET
-    response:
-      file: data/orders.json
+String _config() {
+  return '''seed: 7
+models:
+  User:
+    id: uuid
+    name: name
+    email: email
+    role:
+      enum: [admin, member, viewer]
+    age:
+      type: int
+      min: 18
+      max: 60
 
-  - path: /orders
+stores:
+  users:
+    model: User
+    count: 10
+
+routes:
+  - path: /users
+    method: GET
+    action: list
+    store: users
+
+  - path: /users/:id
+    method: GET
+    action: get
+    store: users
+
+  - path: /users
+    method: POST
+    action: create
+    store: users
+
+  - path: /users/:id
+    method: PUT
+    action: update
+    store: users
+
+  - path: /users/:id
+    method: DELETE
+    action: delete
+    store: users
+
+  - path: /session
     method: POST
     response:
       status: 201
       body:
-        message: Order accepted
-        id: "{{uuid}}"
-        createdAt: "{{timestamp}}"
-''';
-}
-
-String _updatedConfig() {
-  return '''routes:
-  - path: /orders
-    method: GET
-    response:
-      file: data/orders.json
-
-  - path: /orders
-    method: POST
-    response:
-      status: 201
-      body:
-        message: Order accepted after reload
-        id: "{{uuid}}"
-        createdAt: "{{timestamp}}"
-''';
+        token: "{{uuid}}"
+        email: "{{request.body.email}}"
+        message: Signed in
+ ''';
 }
 
 class _ResponseData {

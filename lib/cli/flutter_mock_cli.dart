@@ -99,19 +99,17 @@ Future<int> _runInit(ArgResults args) async {
   await dataDirectory.create(recursive: true);
 
   final mockYaml = File(path.join(cwd, 'mock.yaml'));
-  final usersJson = File(path.join(dataDirectory.path, 'users.json'));
 
-  if (!overwrite && (await mockYaml.exists() || await usersJson.exists())) {
+  if (!overwrite && await mockYaml.exists()) {
     stdout.writeln(
-        'Initialization skipped. Use --force to overwrite existing files.');
+        'Initialization skipped. Use --force to overwrite the existing mock.yaml.');
     return _exitSuccess;
   }
 
   await mockYaml.writeAsString(_defaultMockYaml());
-  await usersJson.writeAsString(_defaultUsersJson());
 
-  stdout.writeln(
-      'Created mock.yaml and data/users.json in ${Directory.current.path}.');
+  stdout
+      .writeln('Created schema-driven mock.yaml in ${Directory.current.path}.');
   return _exitSuccess;
 }
 
@@ -172,6 +170,8 @@ Future<int> _runValidate(ArgResults args) async {
       jsonEncode({
         'valid': true,
         'routes': config.routes.length,
+        'models': config.models.length,
+        'stores': config.stores.length,
         'config': path.normalize(configPath),
       }),
     );
@@ -183,11 +183,11 @@ Future<int> _runValidate(ArgResults args) async {
 }
 
 void _printUsage(ArgParser parser) {
-  stdout.writeln('flutter_mock_server 0.1.5');
+  stdout.writeln('flutter_mock_server 1.0.0');
   stdout.writeln('Usage: flutter_mock <command> [arguments]');
   stdout.writeln('');
   stdout.writeln('Commands:');
-  stdout.writeln('  init      Create a starter mock.yaml and data/ folder.');
+  stdout.writeln('  init      Create a schema-driven starter mock.yaml.');
   stdout.writeln('  start     Start the local mock server.');
   stdout.writeln('  validate  Validate the YAML configuration.');
   stdout.writeln('');
@@ -195,26 +195,58 @@ void _printUsage(ArgParser parser) {
 }
 
 String _defaultMockYaml() {
-  return '''routes:
+  return '''seed: 42
+
+models:
+  User:
+    id: uuid
+    name: name
+    email: email
+    role:
+      enum: [admin, member, viewer]
+    age:
+      type: int
+      min: 18
+      max: 60
+
+stores:
+  users:
+    model: User
+    count: 8
+
+routes:
   - path: /users
     method: GET
-    response:
-      file: data/users.json
+    action: list
+    store: users
+
+  - path: /users/:id
+    method: GET
+    action: get
+    store: users
 
   - path: /users
+    method: POST
+    action: create
+    store: users
+
+  - path: /users/:id
+    method: PUT
+    action: update
+    store: users
+
+  - path: /users/:id
+    method: DELETE
+    action: delete
+    store: users
+
+  - path: /session
     method: POST
     response:
       status: 201
       body:
-        message: User created
-        id: "{{uuid}}"
+        token: "{{uuid}}"
+        email: "{{request.body.email}}"
+        message: Signed in
 ''';
-}
-
-String _defaultUsersJson() {
-  const encoder = JsonEncoder.withIndent('  ');
-  return encoder.convert([
-    {'id': '1', 'name': 'Alice'},
-    {'id': '2', 'name': 'Bob'},
-  ]);
 }

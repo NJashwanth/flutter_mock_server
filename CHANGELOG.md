@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.0
+
+- Added schema-driven models for deterministic fake data generation.
+- Added seeded in-memory stores for stateful API mocking.
+- Added CRUD route actions with path parameter matching.
+- Added request-aware templating for path, query, and body bindings.
+- Added list filtering, sorting, and pagination through query parameters.
+- Added richer model fields for explicit arrays, nested schemas, and ranged dates.
+- Added automated tests covering CRUD flows, filtering, request bindings, and generated field types.
+- Updated the CLI starter config, examples, and docs to reflect the new workflow.
+
 ## 0.1.6
 
 - Updated CI/CD workflow for pub.dev publishing from `main`, including existing-version checks and credential restore from GitHub secret.

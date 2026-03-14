@@ -30,12 +30,18 @@ jobs:
         run: |
           set -euo pipefail
           should_publish="false"
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.publish }}" == "true" ]]; then
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
+            should_publish="true"
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.publish }}" == "true" ]]; then
             should_publish="true"
           fi
           echo "should_publish=$should_publish" >> "$GITHUB_OUTPUT"
           if [[ "$should_publish" == "true" ]]; then
-            echo "Manual publish mode enabled."
+            if [[ "${{ github.event_name }}" == "push" ]]; then
+              echo "Automatic publish mode enabled for main branch."
+            else
+              echo "Manual publish mode enabled."
+            fi
           else
             echo "Validation-only mode (no pub.dev publish)."
           fi

@@ -1,13 +1,53 @@
+seed: 42
+
+models:
+  User:
+    id: uuid
+    name: name
+    email: email
+    role:
+      enum: [admin, member, viewer]
+    age:
+      type: int
+      min: 18
+      max: 60
+
+stores:
+  users:
+    model: User
+    count: 8
+
 routes:
   - path: /users
     method: GET
-    response:
-      file: data/users.json
+    action: list
+    store: users
+
+  - path: /users/:id
+    method: GET
+    action: get
+    store: users
 
   - path: /users
+    method: POST
+    action: create
+    store: users
+
+  - path: /users/:id
+    method: PUT
+    action: update
+    store: users
+
+  - path: /users/:id
+    method: DELETE
+    action: delete
+    store: users
+
+  - path: /session
     method: POST
     response:
       status: 201
       body:
-        message: User created
-        id: "{{uuid}}"
+        token: "{{uuid}}"
+        email: "{{request.body.email}}"
+        message: Signed in
