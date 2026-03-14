@@ -3,27 +3,40 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:yaml/yaml.dart';
 
+/// Parsed representation of a `mock.yaml` file.
 class MockConfig {
+  /// Creates a parsed mock configuration.
   MockConfig({
     required this.sourcePath,
     required this.routes,
   });
 
+  /// Absolute or normalized source path of the loaded YAML file.
   final String sourcePath;
+
+  /// Route definitions loaded from the YAML document.
   final List<MockRoute> routes;
 }
 
+/// A single route entry declared in `mock.yaml`.
 class MockRoute {
+  /// Creates a route with an HTTP method, path, and response.
   MockRoute({
     required this.path,
     required this.method,
     required this.response,
   });
 
+  /// Raw route path as declared in YAML.
   final String path;
+
+  /// HTTP method for the route.
   final String method;
+
+  /// Response configuration for the route.
   final MockResponse response;
 
+  /// Path normalized for runtime matching.
   String get normalizedPath {
     if (path == '/') {
       return '/';
@@ -35,7 +48,9 @@ class MockRoute {
   }
 }
 
+/// Successful response configuration for a route.
 class MockResponse {
+  /// Creates a response configuration.
   MockResponse({
     required this.status,
     required this.file,
@@ -53,7 +68,9 @@ class MockResponse {
   final MockErrorResponse? error;
 }
 
+/// Optional error response that may be returned instead of the primary response.
 class MockErrorResponse {
+  /// Creates an error response configuration.
   MockErrorResponse({
     required this.status,
     required this.file,
@@ -71,7 +88,9 @@ class MockErrorResponse {
   final double rate;
 }
 
+/// Parses and validates `mock.yaml` route configuration.
 class YamlConfigParser {
+  /// Loads, parses, and validates a YAML file from disk.
   Future<MockConfig> parseFile(String configPath) async {
     final file = File(configPath);
     if (!await file.exists()) {
@@ -83,6 +102,7 @@ class YamlConfigParser {
     return parseString(content, sourcePath: file.absolute.path);
   }
 
+  /// Parses and validates YAML content already loaded into memory.
   MockConfig parseString(String content, {String sourcePath = 'mock.yaml'}) {
     final Object? document;
     try {
@@ -287,9 +307,12 @@ class YamlConfigParser {
   }
 }
 
+/// Exception thrown when mock configuration is invalid.
 class MockConfigException implements Exception {
+  /// Creates a configuration exception with a readable message.
   MockConfigException(this.message);
 
+  /// Validation or parsing failure message.
   final String message;
 
   @override

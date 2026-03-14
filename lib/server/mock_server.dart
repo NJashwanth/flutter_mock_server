@@ -10,7 +10,9 @@ import 'package:shelf/shelf_io.dart' as shelf_io;
 import '../config/yaml_parser.dart';
 import '../utils/template_engine.dart';
 
+/// Local Shelf-based mock server backed by `mock.yaml` route definitions.
 class FlutterMockServer {
+  /// Creates a mock server instance for the provided config file and bind target.
   FlutterMockServer({
     required this.configPath,
     this.host = 'localhost',
@@ -34,6 +36,7 @@ class FlutterMockServer {
   StreamSubscription<FileSystemEvent>? _watchSubscription;
   Timer? _reloadDebounce;
 
+  /// Starts the HTTP server and begins watching the config file for changes.
   Future<void> start() async {
     await _reloadConfig(logReload: false);
 
@@ -53,6 +56,7 @@ class FlutterMockServer {
     stdout.writeln('Watching ${path.normalize(configPath)} for changes.');
   }
 
+  /// Stops the HTTP server and cancels file watching.
   Future<void> stop() async {
     _reloadDebounce?.cancel();
     await _watchSubscription?.cancel();

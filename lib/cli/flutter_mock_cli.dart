@@ -13,6 +13,9 @@ const int _exitUsage = 64;
 const int _exitData = 65;
 const int _exitSoftware = 70;
 
+/// Runs the `flutter_mock` command-line interface.
+///
+/// Returns a process exit code after handling the parsed command.
 Future<int> runFlutterMock(List<String> arguments) async {
   final parser = ArgParser()
     ..addCommand(
@@ -180,7 +183,7 @@ Future<int> _runValidate(ArgResults args) async {
 }
 
 void _printUsage(ArgParser parser) {
-  stdout.writeln('flutter_mock_server 0.1.0');
+  stdout.writeln('flutter_mock_server 0.1.1');
   stdout.writeln('Usage: flutter_mock <command> [arguments]');
   stdout.writeln('');
   stdout.writeln('Commands:');
