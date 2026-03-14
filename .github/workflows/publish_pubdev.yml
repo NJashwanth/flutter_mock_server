@@ -1,0 +1,47 @@
+name: Publish to pub.dev
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Dart
+        uses: dart-lang/setup-dart@v1
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Verify tag matches pubspec version
+        env:
+          GIT_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          version=$(awk '/^version:/ { print $2; exit }' pubspec.yaml)
+          expected_tag="v$version"
+
+          if [[ "$GIT_TAG" != "$expected_tag" ]]; then
+            echo "Tag $GIT_TAG does not match pubspec version $version."
+            exit 1
+          fi
+
+      - name: Analyze package
+        run: dart analyze
+
+      - name: Validate package for publishing
+        run: dart pub publish --dry-run
+
+      - name: Publish package
+        run: dart pub publish --force

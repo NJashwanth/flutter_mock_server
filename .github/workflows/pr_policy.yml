@@ -1,0 +1,82 @@
+name: PR Policy
+
+on:
+  pull_request:
+    branches:
+      - main
+  pull_request_review:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  policy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate pubspec version bump
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          set -euo pipefail
+
+          git fetch origin "$BASE_REF" --depth=1
+
+          head_version=$(awk '/^version:/ { print $2; exit }' pubspec.yaml)
+          base_version=$(git show "origin/$BASE_REF:pubspec.yaml" | awk '/^version:/ { print $2; exit }')
+
+          if [[ -z "$head_version" || -z "$base_version" ]]; then
+            echo "Unable to determine pubspec version."
+            exit 1
+          fi
+
+          if [[ "$head_version" == "$base_version" ]]; then
+            echo "pubspec.yaml version must be updated for every PR into main."
+            exit 1
+          fi
+
+          highest_version=$(printf '%s\n%s\n' "$base_version" "$head_version" | sort -V | tail -n1)
+          if [[ "$highest_version" != "$head_version" ]]; then
+            echo "pubspec.yaml version must be incremented. Base: $base_version, PR: $head_version"
+            exit 1
+          fi
+
+          version_tag="v$head_version"
+          if git rev-parse "$version_tag" >/dev/null 2>&1; then
+            echo "Tag $version_tag already exists. Choose a new version."
+            exit 1
+          fi
+
+          echo "Version bump validated: $base_version -> $head_version"
+
+      - name: Require owner approval for non-owner PRs
+        if: ${{ github.event.pull_request.user.login != 'NJashwanth' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const reviews = await github.paginate(github.rest.pulls.listReviews, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              per_page: 100,
+            });
+
+            const approvedByOwner = reviews.some((review) => {
+              return review.user?.login === 'NJashwanth' && review.state === 'APPROVED';
+            });
+
+            if (!approvedByOwner) {
+              core.setFailed('An approval from @NJashwanth is required before this PR can be merged.');
+            }
+
+      - name: Skip owner approval requirement for repository owner PRs
+        if: ${{ github.event.pull_request.user.login == 'NJashwanth' }}
+        run: echo "PR opened by @NJashwanth. Owner approval check skipped."

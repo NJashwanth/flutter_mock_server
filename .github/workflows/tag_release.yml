@@ -1,0 +1,50 @@
+name: Tag Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create version tag from pubspec
+        run: |
+          set -euo pipefail
+
+          version=$(awk '/^version:/ { print $2; exit }' pubspec.yaml)
+          if [[ -z "$version" ]]; then
+            echo "No version found in pubspec.yaml."
+            exit 1
+          fi
+
+          tag="v$version"
+          git fetch --tags
+
+          if git rev-parse "$tag" >/dev/null 2>&1; then
+            existing_commit=$(git rev-list -n 1 "$tag")
+            if [[ "$existing_commit" == "$GITHUB_SHA" ]]; then
+              echo "Tag $tag already points to this commit. Nothing to do."
+              exit 0
+            fi
+
+            echo "Tag $tag already exists on commit $existing_commit. Version reuse is not allowed."
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "$tag" "$GITHUB_SHA"
+          git push origin "$tag"
+
+          echo "Created tag $tag for $GITHUB_SHA"
