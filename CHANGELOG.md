@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.5
+
+- Hardened publish workflow validation so push and manual dispatch events resolve refs safely without invalid workflow runs.
+
 ## 0.1.4
 
 - Fixed the publish workflow trigger logic so tag-push CI/CD runs execute correctly under trusted publishing.

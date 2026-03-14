@@ -25,18 +25,22 @@ jobs:
         run: |
           set -euo pipefail
 
+          tag="${{ github.ref_name }}"
+
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            tag=$(jq -r '.inputs.ref // ""' "$GITHUB_EVENT_PATH")
-            if [[ -z "$tag" ]]; then
-              echo "For workflow_dispatch, provide a tag in inputs.ref (for example: v0.1.2)."
-              exit 1
+            manual_tag="${{ github.event.inputs.ref }}"
+            if [[ -n "$manual_tag" ]]; then
+              tag="$manual_tag"
             fi
-          else
-            tag="${{ github.ref_name }}"
           fi
 
           if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-].*)?$ ]]; then
             echo "Publishing is only allowed from version tags like v0.1.2. Received: $tag"
+            exit 1
+          fi
+
+          if [[ "$tag" == "${{ github.ref_name }}" && "${{ github.ref_type }}" != "tag" ]]; then
+            echo "This run is on a branch ref (${{ github.ref_name }}). Publishing requires a tag ref."
             exit 1
           fi
 
