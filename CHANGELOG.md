@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4
+
+- Fixed the publish workflow trigger logic so tag-push CI/CD runs execute correctly under trusted publishing.
+
 ## 0.1.3
 
 - Fixed CI/CD release flow to publish from tag refs, matching pub.dev trusted publishing requirements.
