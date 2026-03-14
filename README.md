@@ -112,8 +112,8 @@ dart run flutter_mock_server start
 - All changes to `main` are expected to go through pull requests.
 - Every pull request to `main` must increment `pubspec.yaml` version.
 - Pull requests opened by contributors other than `@NJashwanth` require approval from `@NJashwanth` before merge.
-- When a change lands on `main`, GitHub Actions creates a matching `v<version>` tag from `pubspec.yaml`.
-- Pushing that tag triggers automated publication to pub.dev.
+- When a change lands on `main`, GitHub Actions creates a matching `v<version>` tag from `pubspec.yaml` and publishes that revision to pub.dev in the same release job.
+- A manual `Publish to pub.dev` workflow is also available as a fallback if you need to re-run publication for a specific ref.
 
 ### pub.dev trusted publishing
 

@@ -1,9 +1,12 @@
 name: Publish to pub.dev
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch, tag, or commit to publish.
+        required: false
+        default: main
 
 permissions:
   contents: read
@@ -16,26 +19,14 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Set up Dart
         uses: dart-lang/setup-dart@v1
 
       - name: Install dependencies
         run: dart pub get
-
-      - name: Verify tag matches pubspec version
-        env:
-          GIT_TAG: ${{ github.ref_name }}
-        run: |
-          set -euo pipefail
-
-          version=$(awk '/^version:/ { print $2; exit }' pubspec.yaml)
-          expected_tag="v$version"
-
-          if [[ "$GIT_TAG" != "$expected_tag" ]]; then
-            echo "Tag $GIT_TAG does not match pubspec version $version."
-            exit 1
-          fi
 
       - name: Analyze package
         run: dart analyze
