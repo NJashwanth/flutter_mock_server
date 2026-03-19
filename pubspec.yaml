@@ -1,9 +1,15 @@
 name: flutter_mock_server
-description: A Flutter-focused local mock API server with a YAML-driven CLI and hot reload.
+description: A local mock API server for Flutter and Dart with YAML config, static/stateful routes, CRUD simulation, deterministic seeded data, and hot reload.
 version: 1.0.0
 homepage: https://github.com/NJashwanth/flutter_mock_server
 repository: https://github.com/NJashwanth/flutter_mock_server
 issue_tracker: https://github.com/NJashwanth/flutter_mock_server/issues
+topics:
+  - flutter
+  - mock-server
+  - api-mocking
+  - testing
+  - cli
 
 environment:
   sdk: ^3.3.0
