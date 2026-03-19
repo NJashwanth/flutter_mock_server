@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1
+
+- Improved package discoverability metadata in `pubspec.yaml`.
+- Added pub.dev topics for better package categorization and search relevance.
+- Updated README introduction and keywords for improved search indexing signals.
+
 ## 1.0.0
 
 - Added schema-driven models for deterministic fake data generation.

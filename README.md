@@ -1,6 +1,12 @@
 # flutter_mock_server
 
-A Flutter-focused local mock API server that can serve static responses or run a schema-driven, stateful API simulator for app development.
+A local mock API server for Flutter and Dart projects. It supports static mock responses and schema-driven stateful APIs with CRUD routes, seeded fake data, and hot reload.
+
+Use this package when you need a lightweight fake backend for Flutter app development, API integration testing, demos, or offline UI development.
+
+## Keywords
+
+flutter mock server, dart mock server, fake backend for flutter, local api simulator, yaml mock api, api mocking, flutter testing backend, stateful mock api
 
 ## Mental Model
 
