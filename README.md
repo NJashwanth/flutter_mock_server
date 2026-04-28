@@ -398,3 +398,7 @@ dart analyze
 dart run flutter_mock_server validate
 dart run example/flutter_mock_server_example.dart
 ```
+
+## Author
+
+Built by [Jashwanth Neela](https://jneela.dev/).
